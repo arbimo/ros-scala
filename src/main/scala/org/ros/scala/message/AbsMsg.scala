@@ -5,8 +5,12 @@ import scala.reflect.runtime.universe._
 import org.ros.scala.util.MessageGenerator
 
 abstract class AbsMsg extends org.ros.internal.message.Message {
-  private val rm = scala.reflect.runtime.currentMirror
-  private val accessors = rm.classSymbol(this.getClass).toType.members.collect {
+  private def rm = scala.reflect.runtime.currentMirror
+
+//  println( rm.classSymbol(this.getClass))
+//  println(rm.classSymbol(this.getClass).toType.members)
+
+  private def accessors = rm.classSymbol(this.getClass).toType.members.collect {
     case m: MethodSymbol if m.isGetter && m.isPublic => m
   }
   private val instanceMirror = rm.reflect(this)

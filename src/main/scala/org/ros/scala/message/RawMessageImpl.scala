@@ -4,7 +4,7 @@ import java.util
 import org.jboss.netty.buffer.ChannelBuffer
 import org.ros.internal.message
 import org.ros.internal.message.field.{MessageFieldType, PrimitiveFieldType, Field}
-import org.ros.internal.message.{Message, RawMessage}
+import org.ros.internal.message.RawMessage
 import org.ros.message.{MessageIdentifier, Duration, Time}
 import scala.collection.JavaConverters._
 

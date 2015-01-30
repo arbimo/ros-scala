@@ -10,21 +10,19 @@ resolvers += "ROS Java" at "https://github.com/rosjava/rosjava_mvn_repo/raw/mast
 
 resolvers += "ROS WS" at "file://" + sys.env("ROS_MAVEN_DEPLOYMENT_REPOSITORY")
 
-libraryDependencies += "com.github.rosjava.myjava_messages" % "adream_actions" % "0.0.0"
-
 libraryDependencies += "org.ros.rosjava_core" % "rosjava" % "latest.integration" //"[0.1,)"
-
-libraryDependencies += "org.ros.rosjava_messages" % "move_base_msgs" % "latest.integration" //"1.11.14"
 
 libraryDependencies += "com.typesafe.akka" % "akka-actor_2.10" % "latest.integration"
 
 libraryDependencies += "org.scala-lang" % "scala-reflect" % "2.10.4"
 
-libraryDependencies += "org.reflections" % "reflections" % "0.9.9"
+//libraryDependencies += "org.reflections" % "reflections" % "0.9.9"
 
+// Provides the @Nullable annoation that created problems with Reflections
+//libraryDependencies += "com.google.code.findbugs" % "jsr305" % "3.0.0"
 
-// If you need to specify main classes manually, use packSettings and packMain
-//packSettings
-
-// [Optional] Creating `hello` command that calls org.mydomain.Hello#main(Array[String]) 
-//packMain := Map("listener" -> "org.ros.RosRun com.github.rosjava_catkin_package_a.my_pub_sub_tutorial.Listener", "publisher" -> "org.ros.RosRun")
+libraryDependencies ++= Seq(
+  "org.reflections" % "reflections" % "0.9.9",
+  "com.google.code.findbugs" % "jsr305" % "2.0.2"
+//  "org.slf4j" % "slf4j-api" % "1.7.5"
+)

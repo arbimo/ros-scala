@@ -8,7 +8,6 @@ import org.reflections.Reflections
 import org.ros.internal.message.{Message => Msg}
 import org.ros.scala.message.MsgParser
 import org.ros.internal.message.field.PrimitiveFieldType
-import move_base_msgs.MoveBaseResult
 import java.io.PrintWriter
 
 object MessageGenerator extends App {

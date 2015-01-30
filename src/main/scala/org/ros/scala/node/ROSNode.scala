@@ -1,11 +1,8 @@
 package org.ros.scala.node
 
-import akka.actor.ActorRef
-import java.util.concurrent.ConcurrentHashMap
-import org.ros.message.MessageListener
 import org.ros.namespace.GraphName
 import org.ros.node.{ConnectedNode, AbstractNodeMain}
-
+import scala.concurrent.promise
 
 class ROSNode extends AbstractNodeMain {
   var cn : ConnectedNode = null
@@ -19,9 +16,7 @@ class ROSNode extends AbstractNodeMain {
   }
 }
 
-import scala.concurrent.{ future, promise }
-
 object ROSNode {
-  val connectedNodePromise = promise[ConnectedNode]()
-  val connectedNodeFuture = connectedNodePromise.future
+  protected[node] var connectedNodePromise = promise[ConnectedNode]()
+  def connectedNodeFuture = connectedNodePromise.future
 }

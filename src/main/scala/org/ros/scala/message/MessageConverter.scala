@@ -1,13 +1,16 @@
 package org.ros.scala.message
 
+import java.util
+
 import org.reflections.Reflections
 import scala.collection.JavaConverters._
-import akka.actor.{ReceiveTimeout, Inbox, Props, ActorSystem}
+import akka.actor.{ReceiveTimeout, Props, ActorSystem}
 import org.ros.scala.node.{ROSMsg, Subscribe, ROSMessagePasser}
+import org.ros.internal.message.{Message => JMessage}
 
 object MessageConverter extends App {
-   private val rm = scala.reflect.runtime.currentMirror
 
+  private def rm = scala.reflect.runtime.currentMirror
   private lazy val ref = new Reflections("org.ros.scala.message.generated")
   private lazy val msgImpls = ref.getSubTypesOf(classOf[AbsMsg]).asScala
   private lazy val mapping = msgImpls.map(c => getRosJavaInterface(c)-> c)
@@ -15,13 +18,13 @@ object MessageConverter extends App {
   println(mapping)
   val system = ActorSystem("FAPESystem")
   val passer = system.actorOf(Props[ROSMessagePasser], name = "passer")
-  passer ! Subscribe("test")
+//  passer ! Subscribe("test10")
 
   import akka.actor.ActorDSL._
   implicit val actorSystem: ActorSystem = system
 
   actor(new Act {
-    passer ! Subscribe("test")
+    passer ! Subscribe("test10", "nav_msgs/GetMapAction")
     become {
       case ReceiveTimeout => {
         //handle the timeout
@@ -41,40 +44,51 @@ object MessageConverter extends App {
     interfaces.head.getName
   }
 
-//  msgImpls.foreach(m => {
-//    println(m)
-//    println(m.getInterfaces.filter(x => x.getName != "scala.Product" && x.getName != "scala.Serializable").mkString("\n"))
-//    println()
-//  })
-
+  /**
+   * Recursively transforms a ros-java message to its ros-scala counter part
+   * @param jMsg A ros-java message
+   * @return The equivalent ros-scala message
+   */
   def toRosScala(jMsg: org.ros.internal.message.Message) : AbsMsg = {
     if(jMsg.isInstanceOf[AbsMsg])
       return jMsg.asInstanceOf[AbsMsg]
 
+//    println(rm)
+
+    // find the ros-java interface that this message implements (e.g. std_msgs.String)
     val interfaces = rm.runtimeClass(rm.classSymbol(jMsg.getClass)).getInterfaces.filter(x => x.getName != "org.ros.internal.message.GetInstance")
     assert(interfaces.size == 1)
-    val i = interfaces.head
-    val clazz = mapping.find( {case (interface, impl) => i.getName == interface } )
+    val interface = interfaces.head
+
+    // find the corresponding ros-scala class
+    val clazz = mapping.find( {case (interfaceName, impl) => interface.getName == interfaceName } )
       .map{ case (interface, clazz) => clazz }
-      .getOrElse(sys.error(s"No matching class for $i"))
-//    println(clazz)
+      .getOrElse(sys.error(s"No matching class for $interface"))
 
-//    println(clazz.getConstructors.mkString("\n"))
-//    val cm = rm.reflectClass(rm.classSymbol(clazz))
-//    rm.classSymbol(clazz)
+    // extract all variable values of the message
+    val values = jMsg.toRawMessage.getFields.asScala
+      .filter(x => !x.isConstant)
+      .map(x => x.getValue[AnyRef])
 
-//    val definition = i.getField("_DEFINITION").get(null).toString
-//    val fields = MsgParser.extractVariables(definition).map{case (typ, name) => name}
-    val values = jMsg.toRawMessage.getFields.asScala.map(x => x.getValue[AnyRef])
+    // recursively convert all message values to their ros-scala counterpart
+    val valuesAsRosScala = values map {
+      case m: AbsMsg => m
+      case m: org.ros.internal.message.Message => toRosScala(m)
+      case l: java.util.List[_] =>
+        val l2 = new util.LinkedList[Any]()
+        for(m <- l.asScala)
+          if(m.isInstanceOf[org.ros.internal.message.Message])
+            l2.add(toRosScala(m.asInstanceOf[org.ros.internal.message.Message]))
+          else
+            l2.add(m)
+        l2
+      case m => m
+    }
+
     assert(clazz.getConstructors.size == 1)
-    val ctor = clazz.getConstructors.head
-//    val values = Seq(new java.lang.String("coucou"))
+    val constructor = clazz.getConstructors.head
 
-//    println("VALUES:  " + values)
-//    println("CTOR  :  " + ctor)
-
-
-    ctor.newInstance(values: _*).asInstanceOf[AbsMsg]
+    constructor.newInstance(valuesAsRosScala: _*).asInstanceOf[AbsMsg]
   }
 
 }
