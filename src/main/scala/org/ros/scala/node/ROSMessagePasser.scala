@@ -34,7 +34,7 @@ class ROSMessagePasser extends Actor {
   }
 
   // wait for the connected node future.
-  private val node = Await.result(ROSNode.connectedNodeFuture, 10 seconds)
+  private val node = Await.result(ROSNode.connectedNodeFuture, 10.seconds)
 
   protected[node] var subscriptions = Map[String, List[ActorRef]]()
   protected[node] var publishers = Map[String, Publisher[message.Message]]()

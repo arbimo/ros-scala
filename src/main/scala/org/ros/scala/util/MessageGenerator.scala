@@ -22,10 +22,10 @@ object MessageGenerator extends App {
 
   case class Message(packag: String, name: String, fields: Seq[(String, String)])
 
-  val need = typeOf[org.ros.internal.message.Message]
-  println(need)
-  for(x <- ServiceLoader.load(classOf[Msg]).asScala)
-    println(" a " + x)
+//  val need = typeOf[org.ros.internal.message.Message]
+//  println(need)
+//  for(x <- ServiceLoader.load(classOf[Msg]).asScala)
+//    println(" a " + x)
 
 
 
@@ -39,7 +39,9 @@ object MessageGenerator extends App {
 
   val allMessages = allMessageInterfaces.map(i => i.getField("_TYPE").get(null).toString).toSet
 //  println(allMessages.mkString("\n"))
-  println(allMessages.toList.sortBy((x:String) => x).mkString("\n"))
+
+  println("The following messages will be generated: ")
+  println("    " + allMessages.toList.sortBy((x:String) => x).mkString("\n    "))
 
   val msgs = for(x <- allMessageInterfaces) yield {
     val typ = x.getField("_TYPE").get(null).toString
@@ -47,14 +49,15 @@ object MessageGenerator extends App {
     val packag =
       if(typ.contains("/")) typ.substring(0, typ.lastIndexOf("/"))
       else ""
-    println("\n" + x.getName)
+
+//    println("\n" + x.getName)
 //    for(m <- x.getMethods)
 //      println(m)
-    val vars = MsgParser.extractVariables(definition)
-    println(definition)
-    for((t, v) <- vars) {
-      println(s"$t  ${rosTypeToScalaType(t, packag, allMessages)}")
-    }
+//    val vars = MsgParser.extractVariables(definition)
+//    println(definition)
+//    for((t, v) <- vars) {
+//      println(s"$t  ${rosTypeToScalaType(t, packag, allMessages)}")
+//    }
 
     val fields = MsgParser.extractVariables(definition)
       .map {case (typ, name) => (rosTypeToScalaType(typ, packag, allMessages), nameToCamelCase(name)) }
@@ -80,6 +83,8 @@ object MessageGenerator extends App {
 
   pw.close()
 
+  println("Messages were written to "+filename)
+
   def nameToCamelCase(name: String) : String = {
     var nextToUpper = false
     var out = ""
@@ -99,7 +104,7 @@ object MessageGenerator extends App {
 
   private def msgToScala(msg: Message) : String = {
     def fieldToArg(field: (String,String)) =
-      s"@BeanProperty var ${field._2}: ${field._1}"
+      s"@BeanProperty var `${field._2}`: ${field._1}"
 
     s"case class S${msg.name}(\n      ${msg.fields.map(fieldToArg(_)).mkString(",\n      ")})\n    extends AbsMsg with _root_.${msg.packag}.${msg.name}"
   }
