@@ -20,7 +20,7 @@ object MessageGenerator extends App {
     if(args.size > 1) args(1)
     else "org.ros.scala.message.generated"
 
-  case class Message(packag: String, name: String, fields: Seq[(String, String)])
+  case class Message(packag: String, name: String, fields: Seq[(String, String)], typ: String, description: String)
 
 //  val need = typeOf[org.ros.internal.message.Message]
 //  println(need)
@@ -61,7 +61,7 @@ object MessageGenerator extends App {
 
     val fields = MsgParser.extractVariables(definition)
       .map {case (typ, name) => (rosTypeToScalaType(typ, packag, allMessages), nameToCamelCase(name)) }
-    Message(packag, x.getSimpleName, fields)
+    Message(packag, x.getSimpleName, fields, typ, definition)
   }
 
   val msgsByPackage = msgs.groupBy(m => m.packag)
@@ -69,13 +69,13 @@ object MessageGenerator extends App {
   val pw = new PrintWriter(filename)
   pw.write(s"package $containingPackage\n\n")
   pw.write("import org.ros.scala.message.AbsMsg\n\n")
-  pw.write("import scala.beans.BeanProperty\n\n")
+  pw.write("import org.ros.scala.message._\n\n")
 
 //  for((pack, _) <- msgsByPackage) {
 //    pw.write(s"import _root_.{$pack => j_$pack}\n")
 //  }
 
-  for((pack, msgs) <- msgsByPackage) {
+  for((pack, msgs) <- msgsByPackage if pack.contains("std") || pack.contains("geom")) {
     pw.write(s"package $pack {\n")
     pw.write("  " + msgs.map(msgToScala(_)).mkString("\n\n  "))
     pw.write("}\n\n")
@@ -104,9 +104,18 @@ object MessageGenerator extends App {
 
   private def msgToScala(msg: Message) : String = {
     def fieldToArg(field: (String,String)) =
-      s"@BeanProperty var `${field._2}`: ${field._1}"
+      s"var `${field._2}`: ${field._1}"
 
-    s"case class S${msg.name}(\n      ${msg.fields.map(fieldToArg(_)).mkString(",\n      ")})\n    extends AbsMsg with _root_.${msg.packag}.${msg.name}"
+    s"""case class ${msg.name}(
+       |    ${msg.fields.map(fieldToArg(_)).mkString(",\n    ")})
+       |
+       |  object ${msg.name} {
+       |    implicit val metadata = new ROSData[${msg.name}] {
+       |      override val _TYPE = "${msg.typ}"
+       |      override val _DEFINITION = \"\"\"${msg.description}\"\"\"
+       |    }
+       |  }
+       |  """.stripMargin
   }
   private def hasField(msg: Class[_], name: String) : Boolean =
     try {
@@ -146,9 +155,9 @@ object MessageGenerator extends App {
     case "duration" => "org.ros.message.Duration"
     case "bool" => "Boolean"
     case "string" => "String"
-    case "Header" => "_root_.std_msgs.Header"
-    case x if knownMessages.contains(x) => "_root_."+x.replaceAll("/", ".")
-    case x if knownMessages.contains(currentPackage+"/"+x) => ("_root_."+currentPackage+"/"+x).replaceAll("/", ".")
+    case "Header" => "std_msgs.Header"
+    case x if knownMessages.contains(x) => x.replaceAll("/", ".")
+    case x if knownMessages.contains(currentPackage+"/"+x) => (currentPackage+"/"+x).replaceAll("/", ".")
     case unmatch => throw new RuntimeException("Error, a type was not matched: "+unmatch)
   }
 
