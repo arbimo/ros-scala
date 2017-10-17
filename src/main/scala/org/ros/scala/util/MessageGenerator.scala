@@ -104,7 +104,7 @@ object MessageGenerator extends App {
 
   private def msgToScala(msg: Message) : String = {
     def fieldToArg(field: (String,String)) =
-      s"var `${field._2}`: ${field._1}" + (if(field._1.startsWith("scala")) s" = Default[${field._1}]" else "")
+      s"var `${field._2}`: ${field._1} = Default[${field._1}]"
 
     s"""case class ${msg.name}(
        |    ${msg.fields.map(fieldToArg(_)).mkString(",\n    ")})
@@ -113,6 +113,9 @@ object MessageGenerator extends App {
        |    implicit val metadata = new ROSData[${msg.name}] {
        |      override val _TYPE = "${msg.typ}"
        |      override val _DEFINITION = \"\"\"${msg.description}\"\"\"
+       |    }
+       |    implicit val default = new Default[${msg.name}] {
+       |      override def value = ${msg.name}()
        |    }
        |  }
        |  """.stripMargin

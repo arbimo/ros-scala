@@ -1,6 +1,7 @@
 package org.ros.scala.message
 
 import org.ros.internal.message.RawMessage
+import org.ros.internal.message.field.Field
 import org.ros.scala.message.Msg2.JMsg
 
 import scala.reflect.runtime.universe._
@@ -17,7 +18,7 @@ trait GenMsg {
   val _TYPE: String
   val _DEFINITION: String
 
-  def getField(key: String): Any
+  def fields: Seq[Field]
 }
 
 class RJMessage(msg: GenMsg) extends org.ros.internal.message.Message {

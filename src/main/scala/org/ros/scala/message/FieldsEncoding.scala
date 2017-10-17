@@ -1,7 +1,9 @@
 package org.ros.scala.message
 
-import org.ros.internal.message.field.{Field, PrimitiveFieldType}
-import org.ros.message.Duration
+import org.ros.internal.message.field.{Field, MessageFieldType, MessageFields, PrimitiveFieldType}
+import org.ros.message.{Duration, MessageIdentifier}
+import shapeless.labelled.FieldType
+import shapeless.{<:!<, LabelledGeneric}
 
 object FieldsEncoding {
 
@@ -32,16 +34,38 @@ object FieldsEncoding {
       PrimitiveFieldType.TIME.newVariableValue(_)
     implicit val duration: FieldFactory[org.ros.message.Duration] =
       PrimitiveFieldType.DURATION.newVariableValue(_)
+    implicit val string: FieldFactory[String] =
+      PrimitiveFieldType.STRING.newVariableValue(_)
+
+    implicit def message[A](implicit asMessage: AsMessage[A],
+                            rosData: ROSData[A]): FieldFactory[A] =
+      new FieldFactory[A] {
+        override def apply(k: String): Field = {
+          val mft = new MessageFieldType(
+            MessageIdentifier.of(rosData._TYPE),
+            null) // null for factory that should never be used
+          mft.newVariableValue(k)
+        }
+
+        override def apply(k: String, v: A): Field = {
+          val f = apply(k)
+          f.setValue(asMessage(v))
+          f
+        }
+      }
+
   }
 
   trait Default[A] {
     def value: A
   }
   object Default {
+
     def apply[A](implicit ev: Default[A]): A = ev.value
 
     implicit def fromFieldFactory[A](
-        implicit fieldFactory: FieldFactory[A]): Default[A] = new Default[A] {
+                                      implicit fieldFactory: FieldFactory[A],
+                                      ev: A <:!< Product): Default[A] = new Default[A] {
       def value: A = fieldFactory.apply("").getValue[A]
     }
   }
@@ -75,7 +99,21 @@ object FieldsEncoding {
     implicit def generic[A, B](implicit gen: LabelledGeneric.Aux[A, B],
                                asFields: AsFields[B]): AsFields[A] =
       (v: A) => asFields(gen.to(v))
+  }
 
+  trait AsMessage[A] {
+    def apply(v: A): org.ros.internal.message.Message
+  }
+  object AsMessage {
+    implicit def gen[A](implicit asFields: AsFields[A],
+                        rOSData: ROSData[A]): AsMessage[A] = v => {
+      val genMsg = new GenMsg {
+        override def fields: Seq[Field] = asFields(v)
+        override val _DEFINITION: String = rOSData._DEFINITION
+        override val _TYPE: String = rOSData._TYPE
+      }
+      new RawMessageImpl(genMsg)
+    }
   }
 
 }
