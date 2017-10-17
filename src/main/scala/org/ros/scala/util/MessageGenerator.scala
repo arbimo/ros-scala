@@ -68,8 +68,8 @@ object MessageGenerator extends App {
 
   val pw = new PrintWriter(filename)
   pw.write(s"package $containingPackage\n\n")
-  pw.write("import org.ros.scala.message.AbsMsg\n\n")
-  pw.write("import org.ros.scala.message._\n\n")
+  pw.write("import org.ros.scala.message._\n")
+  pw.write("import org.ros.scala.message.FieldsEncoding.Default\n\n")
 
 //  for((pack, _) <- msgsByPackage) {
 //    pw.write(s"import _root_.{$pack => j_$pack}\n")
@@ -104,7 +104,7 @@ object MessageGenerator extends App {
 
   private def msgToScala(msg: Message) : String = {
     def fieldToArg(field: (String,String)) =
-      s"var `${field._2}`: ${field._1}"
+      s"var `${field._2}`: ${field._1}" + (if(field._1.startsWith("scala")) s" = Default[${field._1}]" else "")
 
     s"""case class ${msg.name}(
        |    ${msg.fields.map(fieldToArg(_)).mkString(",\n    ")})
@@ -139,22 +139,22 @@ object MessageGenerator extends App {
         "java.util.List[%s]".format(rosTypeToScalaType(baseType, currentPackage, knownMessages))
       else
         "Array[%s]".format(rosTypeToScalaType(baseType, currentPackage, knownMessages))
-    case "byte" => "Byte"
-    case "int8" => "Byte"
-    case "uint8" => "Byte"
-    case "char" => "Byte"
-    case "int16" => "Short"
-    case "uint16" => "Short"
-    case "int32" => "Int"
-    case "uint32" => "Int"
-    case "int64" => "Long"
-    case "uint64" => "Long"
-    case "float32" => "Float"
-    case "float64" => "Double"
+    case "byte" => "scala.Byte"
+    case "int8" => "scala.Byte"
+    case "uint8" => "scala.Byte"
+    case "char" => "scala.Byte"
+    case "int16" => "scala.Short"
+    case "uint16" => "scala.Short"
+    case "int32" => "scala.Int"
+    case "uint32" => "scala.Int"
+    case "int64" => "scala.Long"
+    case "uint64" => "scala.Long"
+    case "float32" => "scala.Float"
+    case "float64" => "scala.Double"
     case "time" => "org.ros.message.Time"
     case "duration" => "org.ros.message.Duration"
-    case "bool" => "Boolean"
-    case "string" => "String"
+    case "bool" => "scala.Boolean"
+    case "string" => "java.lang.String"
     case "Header" => "std_msgs.Header"
     case x if knownMessages.contains(x) => x.replaceAll("/", ".")
     case x if knownMessages.contains(currentPackage+"/"+x) => (currentPackage+"/"+x).replaceAll("/", ".")

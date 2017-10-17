@@ -5,6 +5,8 @@ organization := "fr.laas.fape"
 
 scalaVersion := "2.12.3"
 
+sbtVersion := "0.13.16"
+
 version := "0.1.0"
 
 // could be as well /opt/ros/hydro/share/maven/
@@ -30,3 +32,7 @@ libraryDependencies ++= Seq(
   "com.chuusai" %% "shapeless" % "2.3.2"
 //  "org.slf4j" % "slf4j-api" % "1.7.5"
 )
+
+libraryDependencies += "com.lihaoyi" %% "utest" % "0.5.4" % "test"
+
+testFrameworks += new TestFramework("utest.runner.Framework")
