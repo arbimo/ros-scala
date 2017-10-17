@@ -45,7 +45,7 @@ class ROSMessagePasser extends Actor {
   }
 
   override def aroundReceive(receive: Actor.Receive, msg: Any): Unit = {
-    Logging(context.system, this).info(s"From [${sender().path}] --> $msg")
+  //  Logging(context.system, this).info(s"From [${sender().path}] --> $msg")
     super.aroundReceive(receive, msg)
   }
 
@@ -88,7 +88,7 @@ class ROSMessagePasser extends Actor {
 
     case ServiceRequest(service, msg, reqID) =>
       try {
-        log.info(s"Service request: $service $msg $reqID")
+        log.debug(s"Service request: $service $msg $reqID")
         val caller = sender()
         val typ =
           if (msg._TYPE.endsWith("Request")) msg._TYPE.substring(0, msg._TYPE.lastIndexOf("Request"))
@@ -103,7 +103,7 @@ class ROSMessagePasser extends Actor {
 
           def onSuccess(p1: message.Message) {
             val msg = MessageConverter.toRosScala(p1)
-            log.info(s"Service answer: $service - $msg")
+            log.debug(s"Service answer: $service - $msg")
             caller tell(ServiceResponse(service, MessageConverter.toRosScala(p1), reqID), self)
           }
         })

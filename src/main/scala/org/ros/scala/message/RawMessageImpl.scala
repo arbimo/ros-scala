@@ -8,7 +8,7 @@ import org.ros.internal.message.RawMessage
 import org.ros.message.{MessageIdentifier, Duration, Time}
 import scala.collection.JavaConverters._
 
-class RawMessageImpl(msg: AbsMsg) extends RawMessage {
+class RawMessageImpl(msg: GenMsg) extends RawMessage {
 
   def setChannelBuffer(p1: String, p2: ChannelBuffer) { throw new NotImplementedError("Setters are not functional yet.") }
 
