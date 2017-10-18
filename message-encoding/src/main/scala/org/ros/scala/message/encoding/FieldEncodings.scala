@@ -2,19 +2,18 @@ package org.ros.scala.message.encoding
 
 import org.ros.internal.message.Message
 import org.ros.internal.message.field._
-import org.ros.message.{Duration, MessageIdentifier}
+import org.ros.message.MessageIdentifier
 import rosscala.message.ROSData
-import shapeless.{<:!<, =:!=, LabelledGeneric}
 
-trait TypeOfField[A] {
-  type Encoding
-  val get: FieldType
+trait Encoding[A] {
+  type EncodedAs
+  val fieldType: FieldType
 }
-object TypeOfField {
-  type Aux[A, Encoding0] = TypeOfField[A] { type Encoding = Encoding0 }
-  def instance[A](ft: FieldType): TypeOfField.Aux[A, A] = new TypeOfField[A] {
-    override type Encoding = A
-    val get: FieldType = ft
+object Encoding {
+  type Aux[A, Encoding0] = Encoding[A] { type EncodedAs = Encoding0 }
+  def instance[A](ft: FieldType): Encoding.Aux[A, A] = new Encoding[A] {
+    override type EncodedAs = A
+    val fieldType: FieldType = ft
   }
 
   implicit val boolean: Aux[Boolean, Boolean] = instance(
@@ -34,10 +33,10 @@ object TypeOfField {
   implicit val string: Aux[String, String] = instance(PrimitiveFieldType.STRING)
 
   implicit def message[A](
-      implicit rosData: ROSData[A]): TypeOfField.Aux[A, Message] =
-    new TypeOfField[A] {
-      type Encoding = Message
-      override val get = new MessageFieldType(
+      implicit rosData: ROSData[A]): Encoding.Aux[A, Message] =
+    new Encoding[A] {
+      override type EncodedAs = Message
+      override val fieldType = new MessageFieldType(
         MessageIdentifier.of(rosData._TYPE),
         null) // null for factory that should never be used
     }
@@ -54,10 +53,10 @@ object AsField {
 
   implicit def fieldWithConversion[K, From, To](
       implicit witness: Witness.Aux[K],
-      fieldType: TypeOfField.Aux[From, To],
+      fieldType: Encoding.Aux[From, To],
       convert: Convert[From, To]): AsField[FieldType[K, From]] =
     v => {
-      val field = fieldType.get.newVariableValue(witness.value.toString)
+      val field = fieldType.fieldType.newVariableValue(witness.value.toString)
       field.setValue(convert(v))
       field
     }
