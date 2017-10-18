@@ -1,11 +1,49 @@
 package org.ros.scala.message
 
-import org.ros.internal.message.field.{Field, MessageFieldType, MessageFields, PrimitiveFieldType}
+import org.ros.internal.message.Message
+import org.ros.internal.message.field._
 import org.ros.message.{Duration, MessageIdentifier}
-import shapeless.labelled.FieldType
 import shapeless.{<:!<, LabelledGeneric}
 
 object FieldsEncoding {
+
+  trait TypeOfField[A] {
+    type Encoding
+    val get: FieldType
+  }
+  object TypeOfField {
+    type Aux[A, Encoding0] = TypeOfField[A] { type Encoding = Encoding0 }
+    def instance[A](ft: FieldType): TypeOfField.Aux[A, A] = new TypeOfField[A] {
+      override type Encoding = A
+      val get: FieldType = ft
+    }
+
+    implicit val boolean: TypeOfField[Boolean] = instance(
+      PrimitiveFieldType.BOOL)
+    implicit val byte: TypeOfField[Byte] = instance(PrimitiveFieldType.INT8)
+    implicit val short: TypeOfField[Short] = instance(PrimitiveFieldType.INT16)
+    implicit val int: TypeOfField[Int] = instance(PrimitiveFieldType.INT32)
+    implicit val long: TypeOfField[Long] = instance(PrimitiveFieldType.INT64)
+    implicit val float: TypeOfField[Float] = instance(
+      PrimitiveFieldType.FLOAT32)
+    implicit val double: TypeOfField[Double] = instance(
+      PrimitiveFieldType.FLOAT64)
+    implicit val time: TypeOfField[org.ros.message.Time] = instance(
+      PrimitiveFieldType.TIME)
+    implicit val duration: TypeOfField[org.ros.message.Duration] = instance(
+      PrimitiveFieldType.DURATION)
+    implicit val string: TypeOfField[String] = instance(
+      PrimitiveFieldType.STRING)
+
+    implicit def message[A](
+        implicit rosData: ROSData[A]): TypeOfField.Aux[A, Message] =
+      new TypeOfField[A] {
+        type Encoding = Message
+        override val get = new MessageFieldType(
+          MessageIdentifier.of(rosData._TYPE),
+          null) // null for factory that should never be used
+      }
+  }
 
   trait FieldFactory[A] {
     def apply(k: String): Field
@@ -16,35 +54,15 @@ object FieldsEncoding {
     }
   }
   object FieldFactory {
-    implicit val boolean: FieldFactory[Boolean] =
-      PrimitiveFieldType.BOOL.newVariableValue(_)
-    implicit val byte: FieldFactory[Byte] =
-      PrimitiveFieldType.INT8.newVariableValue(_)
-    implicit val short: FieldFactory[Short] =
-      PrimitiveFieldType.INT16.newVariableValue(_)
-    implicit val int: FieldFactory[Int] =
-      PrimitiveFieldType.INT32.newVariableValue(_)
-    implicit val long: FieldFactory[Long] =
-      PrimitiveFieldType.INT64.newVariableValue(_)
-    implicit val float: FieldFactory[Float] =
-      PrimitiveFieldType.FLOAT32.newVariableValue(_)
-    implicit val double: FieldFactory[Double] =
-      PrimitiveFieldType.FLOAT64.newVariableValue(_)
-    implicit val time: FieldFactory[org.ros.message.Time] =
-      PrimitiveFieldType.TIME.newVariableValue(_)
-    implicit val duration: FieldFactory[org.ros.message.Duration] =
-      PrimitiveFieldType.DURATION.newVariableValue(_)
-    implicit val string: FieldFactory[String] =
-      PrimitiveFieldType.STRING.newVariableValue(_)
+    implicit def direct[A](
+        implicit ft: TypeOfField.Aux[A, A]): FieldFactory[A] =
+      ft.get.newVariableValue(_)
 
     implicit def message[A](implicit asMessage: AsMessage[A],
-                            rosData: ROSData[A]): FieldFactory[A] =
+                            ft: TypeOfField[A]): FieldFactory[A] =
       new FieldFactory[A] {
         override def apply(k: String): Field = {
-          val mft = new MessageFieldType(
-            MessageIdentifier.of(rosData._TYPE),
-            null) // null for factory that should never be used
-          mft.newVariableValue(k)
+          ft.get.newVariableValue(k)
         }
 
         override def apply(k: String, v: A): Field = {
