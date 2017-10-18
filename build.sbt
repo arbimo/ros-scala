@@ -7,7 +7,7 @@ lazy val commonSettings = Seq(
   version := "0.1-SNAPSHOT",
   crossPaths := true,
   scalaVersion := "2.12.3",
-
+  addCompilerPlugin("io.tryp" %% "splain" % "0.2.6"),
 
     // To sync with Maven central
   publishMavenStyle := true,
@@ -37,7 +37,7 @@ lazy val msgCore = project
   .in(file("message-core"))
   .settings(name := "rosscala_message_core")
   .settings(commonSettings: _*)
-  .settings(libraryDependencies += "org.ros.rosjava_bootstrap" % "message_generation" % "latest.integration")
+  .settings(libraryDependencies += "org.ros.rosjava_bootstrap" % "message_generation" % "0.3.0")
 
 lazy val msgEncoding = project
   .in(file("message-encoding"))
@@ -45,8 +45,7 @@ lazy val msgEncoding = project
   .settings(name := "rosscala_message_encoding")
   .settings(commonSettings: _*)
   .settings(libraryDependencies ++= Seq(
-    "org.ros.rosjava_core" % "rosjava" % "latest.integration",
-    "com.typesafe.akka" %% "akka-actor" % "latest.integration",
+    "org.ros.rosjava_core" % "rosjava" % "0.3.5",
     "org.scala-lang" % "scala-reflect" % "2.12.3",
     "org.reflections" % "reflections" % "0.9.9",
     "com.google.code.findbugs" % "jsr305" % "2.0.2",

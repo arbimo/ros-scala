@@ -1,6 +1,6 @@
 package org.ros.scala.message
 
-import org.ros.scala.message.FieldsEncoding.{AsFields, AsMessage}
+import org.ros.scala.message.encoding.{AsField, AsFields, Convert}
 import rosscala.message.{Default, ROSData}
 import shapeless.labelled.FieldType
 import utest._
@@ -36,6 +36,14 @@ float64 w
 
   val tests = Tests {
     "point" - {
+      import shapeless.labelled._
+      import shapeless.record._
+      import shapeless._
+      import shapeless.syntax.singleton._
+      import shapeless.labelled._
+      Convert[String,String]
+      AsField.of("1" ->> "a")
+
 //      println(AsFields[Point].apply(Point(1, 2)))
 
 //      println(Default[Int :: HNil])
