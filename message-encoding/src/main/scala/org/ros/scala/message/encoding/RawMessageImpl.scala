@@ -1,11 +1,13 @@
-package org.ros.scala.message
+package org.ros.scala.message.encoding
 
 import java.util
+
 import org.jboss.netty.buffer.ChannelBuffer
 import org.ros.internal.message
-import org.ros.internal.message.field.{MessageFieldType, PrimitiveFieldType, Field}
 import org.ros.internal.message.RawMessage
-import org.ros.message.{MessageIdentifier, Duration, Time}
+import org.ros.internal.message.field.Field
+import org.ros.message.{Duration, MessageIdentifier, Time}
+
 import scala.collection.JavaConverters._
 
 class RawMessageImpl(msg: GenMsg) extends RawMessage {

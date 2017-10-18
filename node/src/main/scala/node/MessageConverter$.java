@@ -1,18 +1,10 @@
-package org.ros.scala.message
-
-import java.util
-
-import org.reflections.Reflections
-import scala.collection.JavaConverters._
-import akka.actor.{ReceiveTimeout, Props, ActorSystem}
-import org.ros.scala.node.{ROSMsg, Subscribe, ROSMessagePasser}
-import org.ros.internal.message.{Message => JMessage}
+package org.ros.scala.message;
 
 object MessageConverter extends App {
 
   private def rm = scala.reflect.runtime.currentMirror
   private lazy val ref = new Reflections("org.ros.scala.message.generated")
-  private lazy val msgImpls = ref.getSubTypesOf(classOf[AbsMsg]).asScala
+//  private lazy val msgImpls = ref.getSubTypesOf(classOf[AbsMsg]).asScala
   private lazy val mapping = msgImpls.map(c => getRosJavaInterface(c)-> c)
 
   println(mapping)
