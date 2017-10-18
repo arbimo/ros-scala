@@ -52,3 +52,12 @@ lazy val msgEncoding = project
     "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.6",
     "com.chuusai" %% "shapeless" % "2.3.2"
   ))
+
+lazy val msgGeneration = project
+  .in(file("message-generation"))
+  .settings(name := "rosscala_message_generation")
+  .settings(commonSettings: _*)
+  .settings(libraryDependencies ++= Seq(
+    "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.6",
+    "com.github.scopt" %% "scopt" % "3.7.0"
+  ))

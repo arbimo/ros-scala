@@ -1,5 +1,6 @@
 package rosscala
 
+import org.ros.internal.message.MessageBuffers
 import org.ros.message.{Duration, Time}
 
 import scala.collection.mutable.ArrayBuffer
@@ -37,6 +38,7 @@ package object message {
     implicit val string = immutableInstance[String]("")
     implicit val time = mutableInstance[Time](new Time())
     implicit val duration = mutableInstance[Duration](new Duration())
+    implicit val channelBuffer = mutableInstance[org.jboss.netty.buffer.ChannelBuffer](MessageBuffers.dynamicBuffer())
 
     implicit def array[A: scala.reflect.ClassTag] = mutableInstance[Array[A]](Array.empty[A])
     implicit def arrayBuffer[A] = mutableInstance[ArrayBuffer[A]](ArrayBuffer())

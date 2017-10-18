@@ -1,4 +1,4 @@
-package org.ros.scala.message
+package rosscala.generation
 
 import scala.util.parsing.combinator.JavaTokenParsers
 

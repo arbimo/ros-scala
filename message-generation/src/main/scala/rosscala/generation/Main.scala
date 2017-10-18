@@ -1,0 +1,187 @@
+package rosscala.generation
+
+import java.io.File
+import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Paths}
+
+import scopt._
+import RosUtils._
+
+import scala.collection.mutable.ArrayBuffer
+
+case class Config(
+                 rosScalaVersion: String,
+                 packages: Set[String] = Set(),
+                 targetPackage: String = "rosscala.messages",
+                 buildDirectory: File = new File("/tmp/msgs")
+                 )
+
+object Main extends App {
+  val rosScalaVersion = "0.1-SNAPSHOT"
+
+  val parser = new scopt.OptionParser[Config]("scopt") {
+    head("rosscala-msg-gen", rosScalaVersion)
+
+    opt[Seq[String]]('p', "pkgs")
+      .valueName("<package1>,<package2>...")
+      .action( (x,c) =>
+        c.copy(packages = x.toSet) ).text("jars to include")
+  }
+
+  parser.parse(args, Config(rosScalaVersion)) match {
+    case Some(conf) =>
+      println("Scanning packages containing messages.")
+      val packages =
+        if(conf.packages.isEmpty)
+          RosUtils.packages
+        else
+          conf.packages.map(Package.of(_))
+
+      val units =
+        for(p <- packages) yield {
+          println(s"Processing package ${p.name}")
+          val msgs = messagesOf(p.name)
+
+          val unit = CompilationUnit(p, msgs)
+          unit
+        }
+
+      val full = AllPackages(units.toSeq)
+      println(s"Generating source in ${conf.buildDirectory.getAbsolutePath}")
+      saveToDisk(full)(conf)
+
+
+//      println(packages.toSeq.sortBy(_.name).mkString("\n"))
+    case None =>
+      sys.exit(1)
+  }
+
+  def saveToDisk(packages: AllPackages)(implicit cfg: Config): Unit = {
+    def write(file: File, content: String): Unit = {
+      Files.write(Paths.get(file.getAbsolutePath), content.getBytes(StandardCharsets.UTF_8))
+    }
+    cfg.buildDirectory.mkdirs()
+    write(new File(cfg.buildDirectory, "build.sbt"), packages.buildConfig)
+    for(unit <- packages.units) {
+      val dir = new File(cfg.buildDirectory, unit.pkg.name)
+      dir.mkdir()
+      val source = new File(dir, s"${unit.pkg.name}.scala")
+      write(source, unit.scalaSource)
+    }
+
+  }
+}
+
+
+
+case class Message(packag: String, name: String, fields: Seq[(String, String)], typ: String, description: String) {
+
+  def scalaSource: String = {
+    def fieldToArg(field: (String, String)) = {
+      val fieldName = field._2
+      val fieldType = rosTypeToScalaType(field._1, packag)
+      s"var `$fieldName`: $fieldType = Default[$fieldType]"
+    }
+
+    s"""case class $name(
+       |  ${fields.map(fieldToArg(_)).mkString(",\n  ")})
+       |
+       |object $name {
+       |  implicit val description: ROSData[$name] = new ROSData[$name] {
+       |    override val _TYPE = "$typ"
+       |    override val _DEFINITION =
+       |      \"\"\"${description.replace("\n", "\n        #")}\"\"\"
+       |  }
+       |  implicit val default: Default[$name] = new Default[$name] {
+       |    override def value = $name()
+       |  }
+       |}
+       |""".stripMargin.replace("#","|")
+  }
+}
+object Message {
+  def from(typ: String, definition: String): Message = {
+    val (packag, name) = typ.split("/") match {
+      case Array(x, y) => (x, y)
+      case _ => sys.error(s"Could not parse message type: $typ")
+    }
+    val nonNestedDefinition = definition.split("\n").filterNot(_.startsWith(" ")).mkString("\n")
+    val fields = MsgParser.extractVariables(nonNestedDefinition)
+//      .map {case (typ, name) => (rosTypeToScalaType(typ, packag, allMessages), nameToCamelCase(name)) }
+    Message(packag, name, fields, typ, nonNestedDefinition)
+  }
+}
+
+
+case class CompilationUnit(pkg: Package, msgs: Set[Message]) {
+
+  def scalaHeader(implicit cfg: Config): String =
+  s"""
+    |package ${cfg.targetPackage}.${pkg.name}
+    |
+    |import rosscala.message._
+    |import scala.collection.mutable.ArrayBuffer
+    |
+    |import ${cfg.targetPackage}._
+    |
+    |
+    |""".stripMargin
+
+  def content(implicit cfg: Config): String = {
+    val sb = new StringBuilder
+    for(msg <- msgs) {
+      sb ++= msg.scalaSource
+      sb ++= "\n\n"
+    }
+    sb.toString()
+  }
+
+  def scalaSource(implicit cfg: Config): String = {
+    scalaHeader + content
+  }
+
+  def sbtConfig(implicit cfg: Config): String =
+  s"""
+    |lazy val ${pkg.name} = project.in(file("${pkg.name}"))
+    |  .settings(name := "rosscala_messages__${pkg.name}")
+    |  .settings(version := "${pkg.version}-SNAPSHOT")
+    |  .settings(commonSettings: _*)
+    |  .dependsOn(${pkg.deps.mkString(", ")})
+    |""".stripMargin
+}
+
+case class AllPackages(units: Seq[CompilationUnit]) {
+
+
+  private def sbtHeader(implicit cfg: Config): String =
+    s"""
+      |name := "msgs-build"
+      |
+      |lazy val commonSettings = Seq(
+      |  organization := "com.github.arthur-bit-monnot",
+      |  crossPaths := true,
+      |  scalaVersion := "2.12.3",
+      |
+      |  resolvers ++= Seq(
+      |    "ROS Java" at "https://github.com/rosjava/rosjava_mvn_repo/raw/master",
+      |    "JCenter" at "http://jcenter.bintray.com"),
+      |  libraryDependencies += "com.github.arthur-bit-monnot" %% "rosscala_message_core" % "${cfg.rosScalaVersion}"
+      |)
+      |
+      |lazy val root = project.in(file(".")).
+      |  aggregate(${units.map(_.pkg.name).mkString(", ")}).
+      |  settings(
+      |    publish := {},
+      |    publishLocal := {}
+      |  )
+    """.stripMargin
+
+  def buildConfig(implicit cfg: Config): String = {
+    val sb = new StringBuilder
+    sb ++= sbtHeader
+    for(unit <- units) {
+      sb ++= unit.sbtConfig
+    }
+    sb.toString()
+  }
+}
