@@ -37,6 +37,7 @@ lazy val msgCore = project
   .in(file("message-core"))
   .settings(name := "rosscala_message_core")
   .settings(commonSettings: _*)
+  .settings(libraryDependencies += "org.ros.rosjava_bootstrap" % "message_generation" % "latest.integration")
 
 lazy val msgEncoding = project
   .in(file("message-encoding"))

@@ -75,19 +75,7 @@ object FieldsEncoding {
 
   }
 
-  trait Default[A] {
-    def value: A
-  }
-  object Default {
 
-    def apply[A](implicit ev: Default[A]): A = ev.value
-
-    implicit def fromFieldFactory[A](
-                                      implicit fieldFactory: FieldFactory[A],
-                                      ev: A <:!< Product): Default[A] = new Default[A] {
-      def value: A = fieldFactory.apply("").getValue[A]
-    }
-  }
 
   trait AsField[A] {
     def apply(v: A): Field
