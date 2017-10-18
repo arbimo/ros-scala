@@ -3,6 +3,7 @@ package org.ros.scala.message
 import org.ros.internal.message.Message
 import org.ros.internal.message.field._
 import org.ros.message.{Duration, MessageIdentifier}
+import rosscala.message.ROSData
 import shapeless.{<:!<, LabelledGeneric}
 
 object FieldsEncoding {
