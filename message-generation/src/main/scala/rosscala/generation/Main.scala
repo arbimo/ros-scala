@@ -5,6 +5,8 @@ import better.files.Dsl._
 import scopt._
 import RosUtils._
 
+import scala.util.{Failure, Success, Try}
+
 case class Config(
                  rosScalaVersion: String,
                  packages: Set[String] = Set(),
@@ -31,19 +33,36 @@ object Main extends App {
       val packages =
         if(conf.packages.isEmpty)
           RosUtils.packages
+        else if(conf.processDependencies)
+          conf.packages.flatMap(Package.withDeps)
         else
           conf.packages.map(Package.of(_))
 
-      val units =
-        for(p <- packages) yield {
-          println(s"Processing package ${p.name}")
-          val msgs = messagesOf(p.name)
 
-          val unit = CompilationUnit(p, msgs)
-          unit
+      case class Acc(units: Seq[CompilationUnit] = Seq(), failed: Set[String] = Set())
+
+      val units = order(packages).foldLeft(Acc())((acc, p) => {
+        print(f"Processing package ${p.name}%-27s")
+        acc match {
+          case Acc(_, failed) if p.deps.exists(acc.failed.contains) =>
+            println("abandoned (dependency failed previously")
+            acc.copy(failed = failed + p.name)
+          case Acc(prev, failed) =>
+            Try {
+              val msgs = messagesOf(p.name)
+              CompilationUnit(p, msgs)
+            } match {
+              case Success(unit) =>
+                println("done")
+                acc.copy(units = acc.units :+ unit)
+              case Failure(ex) =>
+                println("failed: " + ex.getLocalizedMessage)
+                acc.copy(failed = acc.failed + p.name)
+            }
         }
+      }).units
 
-      val full = AllPackages(units.toSeq)
+      val full = AllPackages(units)
       println(s"Generating source in ${conf.buildDirectory.pathAsString}")
       saveToDisk(full)(conf)
 
@@ -65,6 +84,17 @@ object Main extends App {
       val dir = cfg.buildDirectory / unit.pkg.name
       dir.createDirectory()
       dir / s"${unit.pkg.name}.scala" < unit.scalaSource
+    }
+  }
+
+  def order(pkgs: Set[Package], prev: Seq[Package] = Seq()): Seq[Package] = {
+    pkgs.find(p => p.deps.forall(dep => !pkgs.exists(p2 => p2.name == dep))) match {
+      case _ if pkgs.isEmpty =>
+        prev
+      case Some(next) =>
+        order(pkgs - next, prev :+ next)
+      case None =>
+        sys.error("Circular dependency in packages.")
     }
   }
 }

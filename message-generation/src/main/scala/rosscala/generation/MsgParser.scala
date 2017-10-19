@@ -30,7 +30,7 @@ object MsgParser extends JavaTokenParsers {
     definition.split("\n")
       .filter(line => !line.startsWith("#"))
       .filter(line => !(line == ""))
-      .map(line => parseAll(singleLine, line).getOrElse(throw new RuntimeException("Unable to parse line \"%s\" in definition:\n%s".format(line, definition))))
+      .map(line => parseAll(singleLine, line).getOrElse(sys.error(s"Unable to parse line:  $line")))
       .filter(_.isInstanceOf[Variable])
       .map(_.asInstanceOf[Variable])
       .map(variable => (variable.tipe, variable.id))
@@ -40,6 +40,6 @@ object MsgParser extends JavaTokenParsers {
 
   def hasResponseRequestSeparator(definition: String) : Boolean =
     definition.split("\n")
-      .map(line => parseAll(singleLine, line).getOrElse(throw new RuntimeException("Unable to parse line \"%s\" in definition:\n%s".format(line, definition))))
+      .map(line => parseAll(singleLine, line).getOrElse(sys.error(s"Unable to parse line:  $line")))
       .contains(ResponseRequestSeparator)
 }

@@ -48,6 +48,11 @@ object RosUtils {
       val retainDep = (pkg: String) => pkgNames.contains(pkg)
       Package(name, packageVersion(name), packageDependencies(name, retainDep))
     }
+
+    def withDeps(name: String): Set[Package] = {
+      val main = Package.of(name)
+      main.deps.flatMap(Package.withDeps) + main
+    }
   }
 
   def rosTypeToScalaType(rosType: String, localPackage: String) : String = rosType match {
