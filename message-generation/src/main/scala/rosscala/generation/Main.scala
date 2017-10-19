@@ -4,6 +4,7 @@ import better.files._
 import better.files.Dsl._
 import scopt._
 import RosUtils._
+import scala.sys.process._
 
 import scala.util.{Failure, Success, Try}
 
@@ -29,11 +30,12 @@ object Main extends App {
 
   parser.parse(args, Config(rosScalaVersion)) match {
     case Some(conf) =>
-      println("Scanning packages containing messages.")
+
       val packages =
-        if(conf.packages.isEmpty)
+        if(conf.packages.isEmpty) {
+          println("Scanning packages containing messages.")
           RosUtils.packages
-        else if(conf.processDependencies)
+        } else if(conf.processDependencies)
           conf.packages.flatMap(Package.withDeps)
         else
           conf.packages.map(Package.of(_))
@@ -64,16 +66,18 @@ object Main extends App {
 
       val full = AllPackages(units)
       println(s"Generating source in ${conf.buildDirectory.pathAsString}")
-      saveToDisk(full)(conf)
+      generateSources(full)(conf)
+
+      println("Compiling and publishing to local ivy store.")
+      compileAndPublish(conf)
 
     case None =>
       sys.exit(1)
   }
 
-  def saveToDisk(packages: AllPackages)(implicit cfg: Config): Unit = {
+  def generateSources(packages: AllPackages)(implicit cfg: Config): Unit = {
     // clean up any previous content
     assert(cfg.buildDirectory.pathAsString.startsWith("/tmp"), "Build directory not in /tmp, wont erase anything there")
-
     cfg.buildDirectory.createDirectories()
     cfg.buildDirectory.children.foreach(_.delete())
 
@@ -85,6 +89,11 @@ object Main extends App {
       dir.createDirectory()
       dir / s"${unit.pkg.name}.scala" < unit.scalaSource
     }
+  }
+
+  def compileAndPublish(implicit cfg: Config): Unit = {
+    val cmd = Process("sbt publishLocal", cfg.buildDirectory.toJava)
+    cmd.!(ProcessLogger.apply(fout = _=>{}, ferr=println))
   }
 
   def order(pkgs: Set[Package], prev: Seq[Package] = Seq()): Seq[Package] = {
@@ -178,7 +187,7 @@ case class CompilationUnit(pkg: Package, msgs: Set[Message]) {
 }
 
 case class AllPackages(units: Seq[CompilationUnit]) {
-  
+
   private def sbtHeader(implicit cfg: Config): String =
     s"""
       |name := "msgs-build"
