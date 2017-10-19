@@ -46,11 +46,8 @@ lazy val msgEncoding = project
   .settings(commonSettings: _*)
   .settings(libraryDependencies ++= Seq(
     "org.ros.rosjava_core" % "rosjava" % "0.3.5",
-    "org.scala-lang" % "scala-reflect" % "2.12.3",
-    "org.reflections" % "reflections" % "0.9.9",
-    "com.google.code.findbugs" % "jsr305" % "2.0.2",
-    "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.6",
-    "com.chuusai" %% "shapeless" % "2.3.2"
+    "com.chuusai" %% "shapeless" % "2.3.2",
+    "io.monix" %% "monix" % "2.3.0"
   ))
 
 lazy val msgGeneration = project

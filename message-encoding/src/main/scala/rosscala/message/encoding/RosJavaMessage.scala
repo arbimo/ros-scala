@@ -1,4 +1,4 @@
-package org.ros.scala.message.encoding
+package rosscala.message.encoding
 
 import org.ros.internal.message.field.Field
 

@@ -20,7 +20,7 @@ class ROSMessagePasser extends Actor {
   log.info("Loading ROSMessagePasser")
 
   // mimic the launch configuration in RosRun to start the node
-  private val loader = new CommandLineLoader(List("org.ros.scala.node.ROSNode").asJava)
+  private val loader = new CommandLineLoader(List("rosscala.node.ROSNode").asJava)
   private val nodeClassName = loader.getNodeClassName
 
   private val nodeConfiguration = loader.build()

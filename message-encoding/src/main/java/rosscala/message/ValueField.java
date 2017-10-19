@@ -1,4 +1,4 @@
-package org.ros.scala.message;
+package rosscala.message;
 
 import com.google.common.base.Preconditions;
 import org.jboss.netty.buffer.ChannelBuffer;

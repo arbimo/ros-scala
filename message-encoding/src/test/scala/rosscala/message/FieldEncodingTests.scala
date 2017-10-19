@@ -1,6 +1,7 @@
-package org.ros.scala.message
+package rosscala.message
 
-import org.ros.scala.message.encoding.{AsField, AsFields, Convert}
+import rosscala.message.encoding.{AsField, AsFields, Convert}
+import rosscala.message.encoding.{AsField, Convert}
 import rosscala.message.{Default, ROSData}
 import shapeless.labelled.FieldType
 import utest._
