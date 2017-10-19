@@ -3,7 +3,7 @@ name := "ros-scala"
 
 // global settings
 lazy val commonSettings = Seq(
-  organization := "com.github.arthur-bit-monnot",
+  organization := "org.ros-scala",
   version := "0.1-SNAPSHOT",
   crossPaths := true,
   scalaVersion := "2.12.3",
@@ -35,14 +35,14 @@ lazy val root = project.in(file(".")).
 
 lazy val msgCore = project
   .in(file("message-core"))
-  .settings(name := "rosscala_message_core")
+  .settings(name := "message_core")
   .settings(commonSettings: _*)
   .settings(libraryDependencies += "org.ros.rosjava_bootstrap" % "message_generation" % "0.3.0")
 
 lazy val msgEncoding = project
   .in(file("message-encoding"))
   .dependsOn(msgCore)
-  .settings(name := "rosscala_message_encoding")
+  .settings(name := "message_encoding")
   .settings(commonSettings: _*)
   .settings(libraryDependencies ++= Seq(
     "org.ros.rosjava_core" % "rosjava" % "0.3.5",
@@ -55,7 +55,7 @@ lazy val msgEncoding = project
 
 lazy val msgGeneration = project
   .in(file("message-generation"))
-  .settings(name := "rosscala_message_generation")
+  .settings(name := "message_generation")
   .settings(commonSettings: _*)
   .settings(libraryDependencies ++= Seq(
     "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.6",

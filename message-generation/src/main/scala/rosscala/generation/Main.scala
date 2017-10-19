@@ -170,7 +170,7 @@ case class CompilationUnit(pkg: Package, msgs: Set[Message]) {
   def sbtConfig(implicit cfg: Config): String =
   s"""
     |lazy val ${pkg.name} = project.in(file("${pkg.name}"))
-    |  .settings(name := "rosscala_messages__${pkg.name}")
+    |  .settings(name := "${pkg.name}")
     |  .settings(version := "${pkg.version}-SNAPSHOT")
     |  .settings(commonSettings: _*)
     |  .dependsOn(${pkg.deps.mkString(", ")})
@@ -185,14 +185,14 @@ case class AllPackages(units: Seq[CompilationUnit]) {
       |name := "msgs-build"
       |
       |lazy val commonSettings = Seq(
-      |  organization := "com.github.arthur-bit-monnot",
+      |  organization := "org.ros-scala.messages",
       |  crossPaths := true,
       |  scalaVersion := "2.12.3",
       |
       |  resolvers ++= Seq(
       |    "ROS Java" at "https://github.com/rosjava/rosjava_mvn_repo/raw/master",
       |    "JCenter" at "http://jcenter.bintray.com"),
-      |  libraryDependencies += "com.github.arthur-bit-monnot" %% "rosscala_message_core" % "${cfg.rosScalaVersion}"
+      |  libraryDependencies += "org.ros-scala" %% "message_core" % "${cfg.rosScalaVersion}"
       |)
       |
       |lazy val root = project.in(file(".")).
