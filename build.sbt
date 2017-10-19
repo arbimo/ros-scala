@@ -59,5 +59,6 @@ lazy val msgGeneration = project
   .settings(commonSettings: _*)
   .settings(libraryDependencies ++= Seq(
     "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.6",
-    "com.github.scopt" %% "scopt" % "3.7.0"
+    "com.github.scopt" %% "scopt" % "3.7.0",
+    "com.github.pathikrit" %% "better-files" % "3.2.0"
   ))

@@ -1,19 +1,16 @@
 package rosscala.generation
 
-import java.io.File
-import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Paths}
-
+import better.files._
+import better.files.Dsl._
 import scopt._
 import RosUtils._
-
-import scala.collection.mutable.ArrayBuffer
 
 case class Config(
                  rosScalaVersion: String,
                  packages: Set[String] = Set(),
                  targetPackage: String = "rosscala.messages",
-                 buildDirectory: File = new File("/tmp/msgs")
+                 processDependencies: Boolean = true,
+                 buildDirectory: File = file"/tmp/msgs"
                  )
 
 object Main extends App {
@@ -47,28 +44,28 @@ object Main extends App {
         }
 
       val full = AllPackages(units.toSeq)
-      println(s"Generating source in ${conf.buildDirectory.getAbsolutePath}")
+      println(s"Generating source in ${conf.buildDirectory.pathAsString}")
       saveToDisk(full)(conf)
 
-
-//      println(packages.toSeq.sortBy(_.name).mkString("\n"))
     case None =>
       sys.exit(1)
   }
 
   def saveToDisk(packages: AllPackages)(implicit cfg: Config): Unit = {
-    def write(file: File, content: String): Unit = {
-      Files.write(Paths.get(file.getAbsolutePath), content.getBytes(StandardCharsets.UTF_8))
-    }
-    cfg.buildDirectory.mkdirs()
-    write(new File(cfg.buildDirectory, "build.sbt"), packages.buildConfig)
-    for(unit <- packages.units) {
-      val dir = new File(cfg.buildDirectory, unit.pkg.name)
-      dir.mkdir()
-      val source = new File(dir, s"${unit.pkg.name}.scala")
-      write(source, unit.scalaSource)
-    }
+    // clean up any previous content
+    assert(cfg.buildDirectory.pathAsString.startsWith("/tmp"), "Build directory not in /tmp, wont erase anything there")
 
+    cfg.buildDirectory.createDirectories()
+    cfg.buildDirectory.children.foreach(_.delete())
+
+
+    (cfg.buildDirectory / "build.sbt") < packages.buildConfig
+
+    for(unit <- packages.units) {
+      val dir = cfg.buildDirectory / unit.pkg.name
+      dir.createDirectory()
+      dir / s"${unit.pkg.name}.scala" < unit.scalaSource
+    }
   }
 }
 
