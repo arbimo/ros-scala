@@ -1,6 +1,7 @@
 package rosscala.generation
 
 import scala.sys.process._
+import scala.util.{Success, Try}
 
 object RosUtils {
 
@@ -44,9 +45,16 @@ object RosUtils {
   case class Package(name: String, version: String, deps: Set[String])
   object Package {
     def of(name: String) : Package = {
-      val pkgNames = packagesWithMessages()
-      val retainDep = (pkg: String) => pkgNames.contains(pkg)
-      Package(name, packageVersion(name), packageDependencies(name, retainDep))
+      Try {
+        val pkgNames = packagesWithMessages()
+        val retainDep = (pkg: String) => pkgNames.contains(pkg)
+        Package(name, packageVersion(name), packageDependencies(name, retainDep))
+      }match {
+        case Success(p) => p
+        case _ =>
+          println(s"Error: could not process package: '$name'. Make sure it exists in the ros path.."  )
+          sys.exit(1)
+      }
     }
 
     def withDeps(name: String): Set[Package] = {

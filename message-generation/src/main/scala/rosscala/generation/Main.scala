@@ -178,8 +178,7 @@ case class CompilationUnit(pkg: Package, msgs: Set[Message]) {
 }
 
 case class AllPackages(units: Seq[CompilationUnit]) {
-
-
+  
   private def sbtHeader(implicit cfg: Config): String =
     s"""
       |name := "msgs-build"
