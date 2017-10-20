@@ -60,3 +60,12 @@ lazy val msgGeneration = project
     "com.github.scopt" %% "scopt" % "3.7.0",
     "com.github.pathikrit" %% "better-files" % "3.2.0"
   ))
+
+lazy val repl = project
+  .in(file("repl"))
+  .dependsOn(msgEncoding, msgGeneration)
+  .settings(name := "repl")
+  .settings(commonSettings: _*)
+  .settings(libraryDependencies ++= Seq(
+    "com.lihaoyi" % "ammonite" % "1.0.2" cross CrossVersion.full
+  ))
