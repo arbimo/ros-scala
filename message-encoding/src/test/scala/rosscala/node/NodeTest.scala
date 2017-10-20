@@ -14,21 +14,17 @@ object NodeTest extends App {
 
   import rosscala._
 
-
-
-//  val result = Ctx.default.foreach(_ => println("AAAAAAAAAAAAAAAAAAAAAAa"))
-//  Await.result(result, 10.seconds)
-//  println(result)
-
-//  defaultNode
-//    .flatMap(_.publisher[Bool]("coucou"))
-//    .map(_.publish(Bool(false)))
-//    .runAsync
+  defaultNode
+    .onErrorHandle(ex => {println(s"Error: $ex"); sys.exit(1)})
+    .runAsync
 
   "/mytopic" ! Header(seq = 3)
   "/mytopic" ! Header(seq = 4)
+  "/mytopic" ! Header(seq = 5)
+  "/mytopic" ! Header(seq = 6)
   println("done")
 
-  Thread.sleep(2000)
+  Thread.sleep(5000)
   defaultNode.map(_.cn.shutdown()).runAsync
+  sys.exit(0)
 }

@@ -7,7 +7,7 @@ lazy val commonSettings = Seq(
   version := "0.1-SNAPSHOT",
   crossPaths := true,
   scalaVersion := "2.12.3",
-  addCompilerPlugin("io.tryp" %% "splain" % "0.2.6"),
+//  addCompilerPlugin("io.tryp" %% "splain" % "0.2.6"),
 
     // To sync with Maven central
   publishMavenStyle := true,

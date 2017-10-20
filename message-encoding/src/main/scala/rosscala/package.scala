@@ -23,7 +23,7 @@ package object rosscala {
         .flatMap(_.publisher[A](topicName))
         .map(_.publish(msg))
         .runAsync
-      Await.result(f, 10.seconds)
+      Await.result(f, 30.seconds)
     }
   }
 
