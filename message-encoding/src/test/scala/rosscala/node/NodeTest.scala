@@ -12,16 +12,17 @@ import scala.concurrent.duration._
 
 object NodeTest extends App {
 
-  import rosscala._
+  import rosscala.defaults._
+  import rosscala.scripting._
 
   defaultNode
-    .onErrorHandle(ex => {println(s"Error: $ex"); sys.exit(1)})
+    .onErrorHandle(ex => {env.log.error(ex.getLocalizedMessage); sys.exit(1)})
     .runAsync
 
   "/mytopic" ! Header(seq = 3)
   "/mytopic" ! Header(seq = 4)
   "/mytopic" ! Header(seq = 5)
-  "/mytopic" ! Header(seq = 6)
+  "/mytopic" ! Bool(true)
   println("done")
 
   Thread.sleep(5000)

@@ -16,7 +16,8 @@ import scala.concurrent.Promise
 class Publisher[A](val pub: RJPublisher[Message])(implicit encode: Convert[A, Message], rosData: ROSData[A]) {
 
   def publish(msg: A)(implicit msgData: ROSData[A]): Unit = {
-    require(msgData._TYPE == rosData._TYPE)
+    require(msgData._TYPE == rosData._TYPE,
+      s"Message type '${msgData._TYPE}' does not match publisher's type '${rosData._TYPE}'")
     pub.publish(encode(msg))
   }
 
@@ -28,11 +29,11 @@ object Publisher {
     println(s"${System.currentTimeMillis()}: $msg")
   }
 
-  def of[A](node: ConnectedNode, topic: String)(implicit metadata: ROSData[A], encode: Convert[A,Message]):
+  def of[A](node: ConnectedNode, topic: String)(implicit env: Env, metadata: ROSData[A], encode: Convert[A,Message]):
    Task[Publisher[A]] = {
 
     Task.defer {
-      log("Starting publisher")
+      env.log.info(s"Starting publisher [$topic] (on ${node.getName})")
       // add new publisher
       val pub = node.newPublisher[Message](topic, metadata._TYPE)
 
@@ -40,11 +41,11 @@ object Publisher {
       val pubPromise: Promise[RJPublisher[Message]] = Promise()
       pub.addListener(new DefaultPublisherListener[Message] {
         override def onMasterRegistrationSuccess(publisher: RJPublisher[Message]) {
-          log("Master registration success")
+          env.log.info(s"Topic registration success: $topic")
           pubPromise.success(pub)
         }
         override def onMasterRegistrationFailure(publisher: RJPublisher[Message]) {
-          log("master registration failure")
+          env.log.error(s"Topic registration failure: $topic (on ${node.getName})")
           pubPromise.failure(new RuntimeException("Failed to register to master."))
         }
       })

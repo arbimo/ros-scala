@@ -14,7 +14,7 @@ class Node(val cn: ConnectedNode) {
   private val publishersByName = mutable.Map[String, Task[Publisher[_]]]()
 
   def publisher[A](topic: String)
-                (implicit ev: ROSData[A], encode: Convert[A,Message])
+                (implicit env: Env, ev: ROSData[A], encode: Convert[A,Message])
   : Task[Publisher[A]] = {
 
     publishersByName.synchronized {
@@ -29,14 +29,15 @@ object Node {
 
   private val nodesByName = mutable.Map[String, Task[Node]]()
 
-  def get(name: String): Task[Node] = {
+  def get(implicit env: Env): Task[Node] = {
     nodesByName.synchronized {
       val nodeTask =
-        Task.deferFuture { ROSNode.start(name) }
+        Task.deferFuture {
+          ROSNode.start(env.nodeName.name) }
           .map(new Node(_))
           .memoize
 
-      nodesByName.getOrElseUpdate(name, nodeTask)
+      nodesByName.getOrElseUpdate(env.nodeName.name, nodeTask)
     }
   }
 }
