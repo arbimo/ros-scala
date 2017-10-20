@@ -14,7 +14,7 @@ class ROSNode(name: String, callback: Promise[ConnectedNode])(implicit env: Env)
   def getDefaultNodeName: GraphName = GraphName.of(name)
 
   override def onStart(node: ConnectedNode) {
-    env.log.info(s"Started: $name")
+    env.log.info(s"Node connected: $name")
     callback.success(node)
   }
 

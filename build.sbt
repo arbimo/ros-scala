@@ -47,7 +47,8 @@ lazy val msgEncoding = project
   .settings(libraryDependencies ++= Seq(
     "org.ros.rosjava_core" % "rosjava" % "0.3.5",
     "com.chuusai" %% "shapeless" % "2.3.2",
-    "io.monix" %% "monix" % "2.3.0"
+    "io.monix" %% "monix" % "2.3.0",
+    "com.lihaoyi" %% "sourcecode" % "0.1.4"
   ))
 
 lazy val msgGeneration = project

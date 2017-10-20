@@ -57,6 +57,7 @@ package object rosscala {
           .flatMap(_.publisher[A](topicName))
           .map(_.publish(msg))
           .logError(s"Could not publish to [$topicName]")
+          .materialize // make sure this does not throw
           .await
       }
     }

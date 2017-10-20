@@ -1,6 +1,7 @@
 package rosscala.node
 
 import monix.eval.{MVar, Task}
+import org.apache.commons.logging.LogFactory
 import org.ros.internal.message.Message
 import org.ros.node.{ConnectedNode, DefaultNodeMainExecutor, NodeConfiguration}
 import rosscala.message.ROSData
@@ -22,7 +23,7 @@ object NodeTest extends App {
   "/mytopic" ! Header(seq = 3)
   "/mytopic" ! Header(seq = 4)
   "/mytopic" ! Header(seq = 5)
-  "/mytopic" ! Bool(true)
+  "/mytopic" ! Header(seq = 8, `frame_id` = "VERY BIG CAPS NAME")
   println("done")
 
   Thread.sleep(5000)
