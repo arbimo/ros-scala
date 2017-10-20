@@ -3,15 +3,29 @@ package rosscala.node
 import monix.eval.MVar
 import monix.execution.Scheduler.Implicits.global
 import org.ros.namespace.GraphName
-import org.ros.node.{AbstractNodeMain, ConnectedNode}
+import org.ros.node.{AbstractNodeMain, ConnectedNode, DefaultNodeMainExecutor, NodeConfiguration}
+
+import scala.concurrent.{Future, Promise}
 
 
-class ROSNode(name: String, callback: MVar[ConnectedNode]) extends AbstractNodeMain {
+class ROSNode(name: String, callback: Promise[ConnectedNode]) extends AbstractNodeMain {
 
   def getDefaultNodeName: GraphName = GraphName.of(name)
 
   override def onStart(node: ConnectedNode) {
     println("ROS node started.")
-    callback.put(node).runAsync
+    callback.success(node)
   }
+}
+
+object ROSNode {
+
+  private val nodeMainExecutor = DefaultNodeMainExecutor.newDefault()
+
+  def start(name: String): Future[ConnectedNode] = {
+    val connectedNodePromise: Promise[ConnectedNode] = Promise()
+    nodeMainExecutor.execute(new ROSNode(name, connectedNodePromise), NodeConfiguration.newPublic("localhost"))
+    connectedNodePromise.future
+  }
+
 }
